@@ -139,3 +139,41 @@ CONTRATOS.md.
              | ID
              | <chamada>
              | ABRE_PAR <expressao> FECHA_PAR
+```
+
+## Entrega 3 — Tabela de Símbolos e Verificação de Tipos
+
+A análise semântica (`mplc/semantica.py`) percorre a AST em duas passadas: a
+primeira coleta a assinatura de todas as funções no escopo global (permitindo
+chamar uma função antes de ela aparecer no arquivo e recursão indireta), e a
+segunda visita os corpos, abrindo escopos, declarando nomes e conferindo os
+tipos de cada expressão.
+
+### Estrutura dos escopos
+
+Representamos os escopos como um **dicionário encadeado**: cada `Escopo` tem
+um dicionário próprio de símbolos (que preserva a ordem de declaração) e um
+ponteiro para o escopo pai. Procurar um nome é subir por essa cadeia até o
+global, o que dá o sombreamento de graça — o nome mais interno é encontrado
+primeiro e, ao fechar o bloco, basta voltar o escopo atual para o pai. Além da
+cadeia, todos os escopos ficam guardados numa lista na ordem em que abriram,
+porque o `--tabela` precisa mostrar inclusive os escopos que já fecharam, e
+porque na Entrega 4 cada símbolo (já anotado no nó da AST) poderá receber sua
+posição de memória sem precisar refazer a busca por nome.
+
+### Regras verificadas
+
+- Escopos aninhados com sombreamento; o corpo da função abre dois escopos
+  (parâmetros e bloco) e cada `se`/`enquanto`/bloco abre mais um.
+- Redeclaração no mesmo escopo, variável ou função não declarada, função
+  duplicada e ausência de `funcao vazio principal()`.
+- Conversão implícita apenas de `inteiro` para `real` (atribuição, argumento,
+  retorno e operadores aritméticos/relacionais).
+- Tipos dos operadores conforme a seção 3.2 da especificação; condição de
+  `se`/`enquanto` precisa ser `logico`.
+- Quantidade e tipo dos argumentos; função `vazio` só pode ser usada como
+  comando.
+- `retorne` com valor em função `vazio`, ou sem valor em função não-`vazio`.
+- Retorno garantido em todos os caminhos, olhando só a estrutura: `retorne`
+  garante; um bloco garante se algum comando dele garante; `se` só garante com
+  `senao` e os dois lados garantindo; `enquanto` nunca garante.
